@@ -35,7 +35,7 @@ ctk.set_default_color_theme("blue")
 TRACK_RE         = re.compile(r"track/(\d+)")
 ALBUM_RE         = re.compile(r"album/(\d+)$")
 ARTIST_RE        = re.compile(r"artist/(\d+)$")
-PLAYLIST_RE      = re.compile(r"([\w\-._@]+)/playlists/(\d+)$")
+PLAYLIST_RE      = re.compile(r"playlists/(.+)$")
 PLAYLIST_LIKED_RE = re.compile(r"/playlists/((?:lk|ik)\.[\w-]+)$")
 
 FETCH_PAGE_SIZE = 10
@@ -213,7 +213,7 @@ def _parse_url(url: str) -> Tuple[str, str]:
     if m := PLAYLIST_LIKED_RE.search(path):
         return ("playlist", m.group(1))
     if m := PLAYLIST_RE.search(path):
-        return ("playlist", m.group(1) + "/" + m.group(2))
+        return ("playlist", m.group(1))
     raise ValueError("Ссылка не распознана: вставьте ссылку на артиста/альбом/трек/плейлист")
 
 
@@ -262,7 +262,7 @@ def _get_preview_cover_uri(
                 u, k = target_id.split("/")
                 pl = client.users_playlists(k, u)
             else:
-                pl = client.users_playlists(target_id)
+                pl = client.playlist(target_id)
             if pl and not isinstance(pl, list):
                 pl_cover = cast(Playlist, pl).cover
                 if pl_cover is not None:
@@ -309,7 +309,7 @@ def _build_preview_text(client: core.Client, target_type: str, target_id: str) -
             pl = client.users_playlists(kind, user)
             fb = f"{user}/{kind}"
         else:
-            pl = client.users_playlists(target_id)
+            pl = client.playlist(target_id)
             fb = target_id
         if not pl or isinstance(pl, list):
             return f"Плейлист: {fb}."
@@ -408,7 +408,7 @@ def _resolve_tracks(
             user, kind = target_id.split("/")
             pl = client.users_playlists(kind, user)
         else:
-            pl = client.users_playlists(target_id)
+            pl = client.playlist(target_id)
         if not pl or isinstance(pl, list):
             raise ValueError("Плейлист не найден")
         playlist = cast(Playlist, pl)

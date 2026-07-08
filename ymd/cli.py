@@ -4,7 +4,6 @@ import itertools
 import logging
 import re
 import time
-import typing
 from argparse import ArgumentTypeError
 from collections.abc import Callable, Generator, Iterable
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
@@ -12,7 +11,7 @@ from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import urlparse
 
-from yandex_music import Album, Playlist, Track
+from yandex_music import Album, Track
 
 from ymd import core
 
@@ -21,7 +20,7 @@ DEFAULT_DELAY = 0
 TRACK_RE = re.compile(r"track/(\d+)")
 ALBUM_RE = re.compile(r"album/(\d+)$")
 ARTIST_RE = re.compile(r"artist/(\d+)$")
-PLAYLIST_RE = re.compile(r"([\w\-._@]+)/playlists/(\d+)$")
+PLAYLIST_RE = re.compile(r"playlists/(.+)$")
 PLAYLIST_LIKED_RE = re.compile(r"/playlists/((?:lk|ik)\.[\w-]+)$")
 
 FETCH_PAGE_SIZE = 10
@@ -36,9 +35,7 @@ def show_default(text: Optional[str] = None) -> str:
     return f"{text} ({default})"
 
 
-def checked_int_arg(
-    min_value: int, max_value: Optional[int] = None
-) -> Callable[[str], int]:
+def checked_int_arg(min_value: int, max_value: Optional[int] = None) -> Callable[[str], int]:
     def func(astr: str) -> int:
         aint = int(astr)
         if aint >= min_value and (max_value is None or aint <= max_value):
@@ -88,9 +85,7 @@ def main():
         help=show_default("Формат текста песни"),
         choices=core.LyricsFormat,
     )
-    common_group.add_argument(
-        "--add-lyrics", action="store_true", help=argparse.SUPPRESS
-    )
+    common_group.add_argument("--add-lyrics", action="store_true", help=argparse.SUPPRESS)
     common_group.add_argument(
         "--embed-cover", action="store_true", help="Встраивать обложку в аудиофайл"
     )
@@ -131,9 +126,7 @@ def main():
         "--compatibility-level",
         metavar="<Уровень совместимости>",
         default=1,
-        type=checked_int_arg(
-            core.MIN_COMPATIBILITY_LEVEL, core.MAX_COMPATIBILITY_LEVEL
-        ),
+        type=checked_int_arg(core.MIN_COMPATIBILITY_LEVEL, core.MAX_COMPATIBILITY_LEVEL),
         help=show_default(
             f"Уровень совместимости, от {core.MIN_COMPATIBILITY_LEVEL} до {core.MAX_COMPATIBILITY_LEVEL}. См. README для подробного описания"
         ),
@@ -237,7 +230,7 @@ def main():
         elif match := PLAYLIST_LIKED_RE.search(path):
             args.playlist_id = match.group(1)
         elif match := PLAYLIST_RE.search(path):
-            args.playlist_id = match.group(1) + "/" + match.group(2)
+            args.playlist_id = match.group(1)
         else:
             print("Параметер url указан в неверном формате")
             return 1
@@ -320,8 +313,8 @@ def main():
             result_tracks = liked_tracks_gen()
         else:
             if "/" in args.playlist_id:
-                user, kind = args.playlist_id.split("/")
-                playlist = typing.cast(Playlist, client.users_playlists(kind, user))
+                playlist = client.playlist(args.playlist_id)
+                assert playlist is not None
             else:
                 kind = args.playlist_id
                 playlist = typing.cast(Playlist, client.users_playlists(kind))
@@ -374,9 +367,7 @@ def main():
                 args.unsafe_path,
             )
             if args.skip_existing:
-                if any(
-                    Path(str(save_path) + s).is_file() for s in core.AUDIO_FILE_SUFFIXES
-                ):
+                if any(Path(str(save_path) + s).is_file() for s in core.AUDIO_FILE_SUFFIXES):
                     continue
 
             save_dir = save_path.parent
@@ -400,9 +391,7 @@ def main():
                     progress_status = f"[{track_counter}/{total_track_count}] "
 
                 if not track.available:
-                    print(
-                        f"{progress_status}Трек {track.title} не доступен для скачивания"
-                    )
+                    print(f"{progress_status}Трек {track.title} не доступен для скачивания")
                     continue
 
                 save_path = args.dir / core.prepare_base_path(
@@ -411,10 +400,7 @@ def main():
                     args.unsafe_path,
                 )
                 if args.skip_existing:
-                    if any(
-                        Path(str(save_path) + s).is_file()
-                        for s in core.AUDIO_FILE_SUFFIXES
-                    ):
+                    if any(Path(str(save_path) + s).is_file() for s in core.AUDIO_FILE_SUFFIXES):
                         continue
 
                 save_dir = save_path.parent

@@ -75,7 +75,7 @@ https://music.yandex.ru/playlists/ik.<uuid>
 Токен нужен для доступа к вашему аккаунту и разделу «Мне нравится».
 
 Инструкция по получению токена:  
-https://yandex-music.readthedocs.io/en/main/token.html
+https://ym.marshal.dev/token/#implicit-oauth
 
 Если включена галочка **Сохранить**, токен хранится локально:
 

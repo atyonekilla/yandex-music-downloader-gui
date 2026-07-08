@@ -80,7 +80,7 @@ def get_download_info(track: Track, quality: ApiTrackQuality) -> CustomDownloadI
         "https://api.music.yandex.net/get-file-info", params=params
     )
     resp = typing.cast(dict, resp)
-    e = resp["download_info"]
+    e = resp["downloadInfo"]
     raw_codec = e["codec"]
     file_format = FILE_FORMAT_MAPPING.get(raw_codec)
     if file_format is None:

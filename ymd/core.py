@@ -1,6 +1,7 @@
 import datetime as dt
 import hashlib
 import re
+import sys
 import time
 import typing
 from collections.abc import Callable
@@ -36,7 +37,7 @@ from yandex_music import (
 )
 from yandex_music.exceptions import NetworkError
 
-from ymd import api
+from ymd import api, text_utils
 from ymd.api import (
     ApiTrackQuality,
     Container,
@@ -56,7 +57,7 @@ MAX_COMPATIBILITY_LEVEL = 1
 
 AUDIO_FILE_SUFFIXES = {".mp3", ".flac", ".m4a"}
 TEMPORARY_FILE_NAME_TEMPLATE = ".yandex-music-downloader.{}.tmp"
-MAX_FILE_NAME_LENGTH_WITHOUT_SUFFIX = 255 - max(
+MAX_FILE_NAME_BYTE_LENGTH_WITHOUT_SUFFIX = 255 - max(
     len(suffix) for suffix in AUDIO_FILE_SUFFIXES
 )
 
@@ -168,10 +169,11 @@ def prepare_base_path(
         replacement = clear_re.sub("_", replacement)
         path_str = path_str.replace(placeholder, replacement)
     path = Path(path_str)
+
     trimmed_parts = [
-        part
-        if len(part) <= MAX_FILE_NAME_LENGTH_WITHOUT_SUFFIX
-        else part[:MAX_FILE_NAME_LENGTH_WITHOUT_SUFFIX]
+        text_utils.remove_characters_to_satisfy_byte_length(
+            part, sys.getfilesystemencoding(), MAX_FILE_NAME_BYTE_LENGTH_WITHOUT_SUFFIX
+        )
         for part in path.parts
     ]
     return Path(*trimmed_parts)
